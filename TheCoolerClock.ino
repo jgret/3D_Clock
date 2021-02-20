@@ -1,179 +1,274 @@
 #include <Adafruit_NeoPixel.h>
 #include <RTClib.h>
+#include <Arduino.h>
 
 #define PIN 2 // input pin Neopixel is attached to
 
-#define NUMPIXELS 58 // number of neopixels in strip
-#define SEG_0 0
-#define SEG_1 7
-#define SEG_2 16
-#define SEG_3 23
-#define BLUE 255, 255, 255
+#define NUMPIXELS 58  // number of neopixels in strip
+
+//   SEG:  
+//     0     1     2     3
+//    ---   ---   ---   --- 
+//   |   | |   | |   | |   |
+//    ---   ---   ---   --- 
+//   |   | |   | |   | |   |
+//    ---   ---   ---   --- 
+   
+#define SEG_0 0       // leds before SEG_0   
+#define SEG_1 13      // leds before SEG_1   ((1 * 7) * 2) - 1
+#define SEG_2 29      // leds before SEG_2   ((2 * 7) * 2) - 1 + 2
+#define SEG_3 43      // leds before SEG_3   ((3 * 7) * 2) - 1 + 2
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 RTC_DS3231 rtc;
-
-int delayval = 1000; // timing delay in milliseconds
-
-int redColor = 255;
-int greenColor = 0;
-int blueColor = 0;
-
-//pinMode(2, OUTPUT);
 
 void setup()
 {
 
   Serial.begin(9600);
 
-  // Initialize the NeoPixel library.
+  // Initialize the NeoPixel library
   pixels.begin();
   clearSegments();
   pixels.show();
 
-  // Serial.println("Hello World");
+  if (!rtc.begin())
+  {
+    Serial.println("No RTC found");
+    while (1);
+  }
 
-  // if (!rtc.begin()) {
-  //   Serial.println("No RTC found");
-  //   while (1);
-  // }
-
-  // if (!rtc.lostPower()) {
-  //   Serial.println("DRECK");
-  //   while (1);
-  // }
+  if (!rtc.lostPower())
+  {
+    Serial.println("RTC has low Power");
+    // Set Time
+    while (1);
+  }
 }
 
 void loop()
 {
-
-  for (int i = 0; i < NUMPIXELS; i++)
+  //read clock time from rtc
+  DateTime now = rtc.now();
+  int hour;
+  if (now.isPM) 
   {
-    pixels.setPixelColor(i, pixels.Color(255, 0, 0));
+    hour = now.hour + 12;
+  } else {
+    hour = now.hour;
   }
-  pixels.show();
-  delay(10);
+  int min = now.minute;
 
-  for (int i = 0; i < NUMPIXELS; i++)
-  {
-    pixels.setPixelColor(i, pixels.Color(0, 255, 0));
-  }
-  pixels.show();
-  delay(10);
+  //display time on segments
+  clearSegments();
+  displayNum(SEG_0, hour / 10, 255, 0, 0);
+  displayNum(SEG_1, hour % 10, 255, 0, 0);
+  displayNum(SEG_2, min / 10, 255, 0, 0);
+  displayNum(SEG_3, min % 10, 255, 0, 0);
 
-  for (int i = 0; i < NUMPIXELS; i++)
-  {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 255));
-  }
+  //update Clock
   pixels.show();
-  delay(10);
+  delay(1000);
 }
 
 void clearSegments()
 {
   for (int i = 0; i < NUMPIXELS; i++)
   {
-    pixels.setPixelColor(i, pixels.Color(0, 0, 0));
+    pixels.setPixelColor(i, 0);
   }
-  pixels.show();
 }
 
-void setSegments(int hour, int min)
-{
+//    7-Segment LEDs
+//   
+//             6/7
+//          ---- ----
+//         |         |
+//     8/9 |         | 4/5
+//         |         |
+//          ---- ----
+//         |   2/3   |
+//   10/11 |         | 0/1
+//         |         |
+//          ---- ----
+//            12/13 
+
+void displayTime(int hour, int min) {
+  displayNum(SEG_0, hour / 10, )
 }
 
 void displayNum(int segoff, int num, int r, int g, int b)
 {
 
+  uint32_t color = pixels.Color(r, g, b);
+
   switch (num)
   {
 
   case 0:
-    pixels.setPixelColor(segoff + 0, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 2, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 3, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 4, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 5, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 6, pixels.Color(r, g, b));
+    pixels.setPixelColor(segoff + 0,  color);
+    pixels.setPixelColor(segoff + 1,  color);
+ 
+    pixels.setPixelColor(segoff + 4,  color);
+    pixels.setPixelColor(segoff + 5,  color);
+     
+    pixels.setPixelColor(segoff + 6,  color);
+    pixels.setPixelColor(segoff + 7,  color);
+     
+    pixels.setPixelColor(segoff + 8,  color);
+    pixels.setPixelColor(segoff + 9,  color);
+     
+    pixels.setPixelColor(segoff + 10, color);
+    pixels.setPixelColor(segoff + 11, color);
+   
+    pixels.setPixelColor(segoff + 12, color);
+    pixels.setPixelColor(segoff + 13, color);
     break;
 
   case 1:
-    pixels.setPixelColor(segoff + 0, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 2, pixels.Color(r, g, b));
+    pixels.setPixelColor(segoff + 0,  color);
+    pixels.setPixelColor(segoff + 1,  color);
+ 
+    pixels.setPixelColor(segoff + 2,  color);
+    pixels.setPixelColor(segoff + 3,  color);
     break;
 
-  case 2:
-    pixels.setPixelColor(segoff + 3, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 2, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 1, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 5, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 6, pixels.Color(r, g, b));
+  case 2: 
+    pixels.setPixelColor(segoff + 2,  color);
+    pixels.setPixelColor(segoff + 3,  color);
+ 
+    pixels.setPixelColor(segoff + 4,  color);
+    pixels.setPixelColor(segoff + 5,  color);
+ 
+    pixels.setPixelColor(segoff + 6,  color);
+    pixels.setPixelColor(segoff + 7,  color);
+
+    pixels.setPixelColor(segoff + 10, color);
+    pixels.setPixelColor(segoff + 11, color);
+
+    pixels.setPixelColor(segoff + 12, color);
+    pixels.setPixelColor(segoff + 13, color);
     break;
 
   case 3:
-    pixels.setPixelColor(segoff + 3, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 2, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 1, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 0, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 6, pixels.Color(r, g, b));
+    pixels.setPixelColor(segoff + 0,  color);
+    pixels.setPixelColor(segoff + 1,  color);
+ 
+    pixels.setPixelColor(segoff + 2,  color);
+    pixels.setPixelColor(segoff + 3,  color);
+ 
+    pixels.setPixelColor(segoff + 4,  color);
+    pixels.setPixelColor(segoff + 5,  color);
+ 
+    pixels.setPixelColor(segoff + 6,  color);
+    pixels.setPixelColor(segoff + 7,  color);
+
+    pixels.setPixelColor(segoff + 12, color);
+    pixels.setPixelColor(segoff + 13, color);
     break;
 
   case 4:
-    pixels.setPixelColor(segoff + 4, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 1, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 0, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 2, pixels.Color(r, g, b));
+    pixels.setPixelColor(segoff + 0,  color);
+    pixels.setPixelColor(segoff + 1,  color);
+ 
+    pixels.setPixelColor(segoff + 2,  color);
+    pixels.setPixelColor(segoff + 3,  color);
+ 
+    pixels.setPixelColor(segoff + 4,  color);
+    pixels.setPixelColor(segoff + 5,  color);
+ 
+    pixels.setPixelColor(segoff + 8,  color);
+    pixels.setPixelColor(segoff + 9,  color);
     break;
 
   case 5:
-    pixels.setPixelColor(segoff + 3, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 4, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 1, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 0, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 6, pixels.Color(r, g, b));
+    pixels.setPixelColor(segoff + 0,  color);
+    pixels.setPixelColor(segoff + 1,  color);
+ 
+    pixels.setPixelColor(segoff + 2,  color);
+    pixels.setPixelColor(segoff + 3,  color);
+ 
+    pixels.setPixelColor(segoff + 6,  color);
+    pixels.setPixelColor(segoff + 7,  color);
+ 
+    pixels.setPixelColor(segoff + 8,  color);
+    pixels.setPixelColor(segoff + 9,  color);
+    
+    pixels.setPixelColor(segoff + 12, color);
+    pixels.setPixelColor(segoff + 13, color);
     break;
 
   case 6:
-    pixels.setPixelColor(segoff + 3, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 4, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 1, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 0, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 5, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 6, pixels.Color(r, g, b));
+    pixels.setPixelColor(segoff + 0,  color);
+    pixels.setPixelColor(segoff + 1,  color);
+ 
+    pixels.setPixelColor(segoff + 2,  color);
+    pixels.setPixelColor(segoff + 3,  color);
+     
+    pixels.setPixelColor(segoff + 6,  color);
+    pixels.setPixelColor(segoff + 7,  color);
+     
+    pixels.setPixelColor(segoff + 8,  color);
+    pixels.setPixelColor(segoff + 9,  color);
+    
+    pixels.setPixelColor(segoff + 10, color);
+    pixels.setPixelColor(segoff + 11, color);
+    
+    pixels.setPixelColor(segoff + 12, color);
+    pixels.setPixelColor(segoff + 13, color);
     break;
 
   case 7:
-    pixels.setPixelColor(segoff + 3, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 2, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 0, pixels.Color(r, g, b));
+    pixels.setPixelColor(segoff + 0,  color);
+    pixels.setPixelColor(segoff + 1,  color);
+     
+    pixels.setPixelColor(segoff + 4,  color);
+    pixels.setPixelColor(segoff + 5,  color);
+     
+    pixels.setPixelColor(segoff + 6,  color);
+    pixels.setPixelColor(segoff + 7,  color);
     break;
 
   case 8:
-    pixels.setPixelColor(segoff + 0, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 1, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 2, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 3, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 4, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 5, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 6, pixels.Color(r, g, b));
+    pixels.setPixelColor(segoff + 0,  color);
+    pixels.setPixelColor(segoff + 1,  color);
+     
+    pixels.setPixelColor(segoff + 2,  color);
+    pixels.setPixelColor(segoff + 3,  color);
+     
+    pixels.setPixelColor(segoff + 4,  color);
+    pixels.setPixelColor(segoff + 5,  color);
+         
+    pixels.setPixelColor(segoff + 6,  color);
+    pixels.setPixelColor(segoff + 7,  color);
+     
+    pixels.setPixelColor(segoff + 8,  color);
+    pixels.setPixelColor(segoff + 9,  color);
+    
+    pixels.setPixelColor(segoff + 10, color);
+    pixels.setPixelColor(segoff + 11, color);
+    pixels.setPixelColor(segoff + 12, color);
+    pixels.setPixelColor(segoff + 13, color);
     break;
 
   case 9:
-    pixels.setPixelColor(segoff + 0, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 1, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 2, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 3, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 4, pixels.Color(r, g, b));
-    pixels.setPixelColor(segoff + 6, pixels.Color(r, g, b));
+    pixels.setPixelColor(segoff + 0,  color);
+    pixels.setPixelColor(segoff + 1,  color);
+     
+    pixels.setPixelColor(segoff + 2,  color);
+    pixels.setPixelColor(segoff + 3,  color);
+     
+    pixels.setPixelColor(segoff + 4,  color);
+    pixels.setPixelColor(segoff + 5,  color);
+         
+    pixels.setPixelColor(segoff + 6,  color);
+    pixels.setPixelColor(segoff + 7,  color);
+     
+    pixels.setPixelColor(segoff + 8,  color);
+    pixels.setPixelColor(segoff + 9,  color);
+
+    pixels.setPixelColor(segoff + 12, color);
+    pixels.setPixelColor(segoff + 13, color);
     break;
   }
-}
-
-// setColor()
-// picks random values to set for RGB
-void setColor()
-{
-  redColor = random(0, 255);
-  greenColor = random(0, 255);
-  blueColor = random(0, 255);
 }
