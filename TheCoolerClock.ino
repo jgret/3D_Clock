@@ -1,10 +1,13 @@
 #include <Adafruit_NeoPixel.h>
 #include <RTClib.h>
-#include <Arduino.h>
 
 #define PIN 2 // input pin Neopixel is attached to
-
 #define NUMPIXELS 58  // number of neopixels in strip
+   
+#define SEG_0 0       // leds before SEG_0   
+#define SEG_1 13      // leds before SEG_1   ((1 * 7) * 2) - 1
+#define SEG_2 29      // leds before SEG_2   ((2 * 7) * 2) - 1 + 2
+#define SEG_3 43      // leds before SEG_3   ((3 * 7) * 2) - 1 + 2
 
 //   SEG:  
 //     0     1     2     3
@@ -13,25 +16,17 @@
 //    ---   ---   ---   --- 
 //   |   | |   | |   | |   |
 //    ---   ---   ---   --- 
-   
-#define SEG_0 0       // leds before SEG_0   
-#define SEG_1 13      // leds before SEG_1   ((1 * 7) * 2) - 1
-#define SEG_2 29      // leds before SEG_2   ((2 * 7) * 2) - 1 + 2
-#define SEG_3 43      // leds before SEG_3   ((3 * 7) * 2) - 1 + 2
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, PIN, NEO_GRB + NEO_KHZ800);
 RTC_DS3231 rtc;
 
 void setup()
 {
-
   Serial.begin(9600);
 
   // Initialize the NeoPixel library
   pixels.begin();
-  clearSegments();
-  pixels.show();
-
+ 
   if (!rtc.begin())
   {
     Serial.println("No RTC found");
@@ -51,20 +46,17 @@ void loop()
   //read clock time from rtc
   DateTime now = rtc.now();
   int hour;
-  if (now.isPM) 
+  if (now.isPM()) 
   {
-    hour = now.hour + 12;
+    hour = now.hour() + 12;
   } else {
-    hour = now.hour;
+    hour = now.hour();
   }
-  int min = now.minute;
+  int min = now.minute();
 
   //display time on segments
   clearSegments();
-  displayNum(SEG_0, hour / 10, 255, 0, 0);
-  displayNum(SEG_1, hour % 10, 255, 0, 0);
-  displayNum(SEG_2, min / 10, 255, 0, 0);
-  displayNum(SEG_3, min % 10, 255, 0, 0);
+  displayTime(hour, min);
 
   //update Clock
   pixels.show();
@@ -94,12 +86,14 @@ void clearSegments()
 //            12/13 
 
 void displayTime(int hour, int min) {
-  displayNum(SEG_0, hour / 10, )
+  displayNum(SEG_0, hour / 10, 255, 0, 0);
+  displayNum(SEG_1, hour % 10, 255, 0, 0);
+  displayNum(SEG_2, min / 10, 255, 0, 0);
+  displayNum(SEG_3, min % 10, 255, 0, 0);
 }
 
 void displayNum(int segoff, int num, int r, int g, int b)
 {
-
   uint32_t color = pixels.Color(r, g, b);
 
   switch (num)
